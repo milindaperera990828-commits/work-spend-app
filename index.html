@@ -1,148 +1,568 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Work & Spend - Milinda & Sewmini</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-    h1 { text-align: center; }
-    .card { background: white; padding: 20px; margin: 10px auto; max-width: 700px; border-radius: 8px; box-shadow: 0 0 5px #aaa; }
-    label { display: block; margin: 8px 0 4px; }
-    input, select { width: 100%; padding: 6px; margin-bottom: 10px; }
-    button { padding: 8px 15px; margin: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    th { background: #eee; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Work & Spend — Milinda & Sewmini</title>
+<style>
+  :root{
+    --bg:#0b0c10; --panel:#12141a; --muted:#c7c9d1; --text:#f7f8fb;
+    --accent:#2dd4bf; --danger:#ef4444; --warn:#f59e0b; --border:#1f2430; --chip:#1a1f2b;
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:#0e1017;color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial}
+  header{position:sticky;top:0;z-index:10;background:#0e1017cc;backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+  .wrap{max-width:1100px;margin:0 auto;padding:14px}
+  h1{margin:6px 0 2px;font-size:22px}.sub{color:var(--muted);font-size:12px}
+  nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  nav button{background:var(--chip);border:1px solid var(--border);color:var(--text);border-radius:12px;padding:9px 12px;font-weight:700}
+  nav button.active{outline:2px solid var(--accent)}
+  main{padding:18px 14px 60px}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 10px 28px #0005}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1}
+  label{font-size:12px;color:var(--muted);display:block;margin:4px 0}
+  input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0f1320;color:var(--text)}
+  textarea{min-height:70px;resize:vertical}
+  input[type="date"],input[type="month"],input[type="number"]{font-variant-numeric:tabular-nums}
+  .btn{border:0;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#05241e}.btn.ghost{background:transparent;border:1px dashed var(--border);color:var(--muted)}
+  .btn.danger{background:var(--danger);color:#fff}.btn.warn{background:var(--warn);color:#000}
+  .pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:var(--chip);border:1px solid var(--border);font-size:12px}
+  .num{font-variant-numeric:tabular-nums}
+  .hide{display:none}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{border-bottom:1px solid var(--border);padding:10px 8px;vertical-align:top}
+  th{text-align:left;color:var(--muted);font-weight:700}
+</style>
 </head>
 <body>
-  <h1>Work & Spend Tracker (Milinda & Sewmini)</h1>
-
-  <!-- Add Income Section -->
-  <div class="card">
-    <h2>Add Income</h2>
-    <label for="person">Person</label>
-    <select id="person">
-      <option value="Milinda">Milinda</option>
-      <option value="Sewmini">Sewmini</option>
-    </select>
-
-    <label for="site">Site</label>
-    <select id="site"></select>
-    <button onclick="showAddSite()">+ Add New Site</button>
-
-    <label for="date">Date</label>
-    <input type="date" id="date">
-
-    <label for="hours">Hours Worked</label>
-    <input type="number" id="hours" placeholder="Enter hours">
-
-    <label for="rate">Hourly Rate ($)</label>
-    <input type="number" id="rate" placeholder="Enter rate">
-
-    <button onclick="addIncome()">Add Income</button>
+<header>
+  <div class="wrap">
+    <div class="row">
+      <div>
+        <h1>Work & Spend</h1>
+        <div class="sub">Milinda &amp; Sewmini • Sites with weekday defaults • Persistent storage</div>
+      </div>
+      <div class="right">
+        <label class="small">Month</label>
+        <input type="month" id="monthPicker">
+      </div>
+    </div>
+    <nav id="tabs">
+      <button data-tab="dashboard" class="active">Dashboard</button>
+      <button data-tab="roster">Upcoming Shifts</button>
+      <button data-tab="income">Income</button>
+      <button data-tab="sites">Sites</button>
+      <button data-tab="reports">Reports</button>
+      <button data-tab="backup">Export / Import</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
   </div>
+</header>
 
-  <!-- Add New Site Section -->
-  <div class="card" id="newSiteCard" style="display:none;">
-    <h2>Add New Site</h2>
-    <label for="newSiteName">Site Name</label>
-    <input type="text" id="newSiteName" placeholder="e.g. Netball Stadium SA">
+<main class="wrap">
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="tab">
+    <div class="grid">
+      <div class="card">
+        <div class="section-title">Income (This Month)</div>
+        <div class="row">
+          <div><label>Total</label><div id="kpiIncome" class="num" style="font-size:26px;font-weight:900">$0.00</div></div>
+          <div><label>Milinda</label><div id="kpiMilinda" class="num">$0.00</div></div>
+          <div><label>Sewmini</label><div id="kpiSewmini" class="num">$0.00</div></div>
+        </div>
+        <div class="small" id="incomeHoursHint" style="color:var(--muted)"></div>
+      </div>
+      <div class="card">
+        <div class="section-title">Upcoming (next 14 days)</div>
+        <table id="soonTable">
+          <thead><tr><th>Date</th><th>Person</th><th>Site</th><th class="num">Hours</th><th class="num">Rate</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
-    <label>Weekly Hours (Mon–Sun)</label>
-    <input type="text" id="weeklyHours" placeholder="e.g. Mon=5,Tue=4,...">
+  <!-- ROSTER -->
+  <section id="roster" class="tab hide">
+    <div class="grid">
+      <div class="card">
+        <div class="section-title">Add Upcoming Shift</div>
+        <div class="row">
+          <div><label>Date</label><input id="rsDate" type="date"></div>
+          <div><label>Person</label>
+            <select id="rsPerson"><option>Milinda</option><option>Sewmini</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>Site</label><select id="rsSite"></select></div>
+          <div><label>Hours (auto by weekday)</label><input id="rsHours" type="number" step="0.01" min="0"></div>
+          <div><label>Rate (AUD)</label><input id="rsRate" type="number" step="0.01" min="0"></div>
+        </div>
+        <div><label>Notes</label><textarea id="rsNotes" placeholder="Optional"></textarea></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn primary" id="addShiftBtn">Add Upcoming Shift</button>
+          <div class="pill right">Tap “Convert → Income” when done</div>
+        </div>
+      </div>
 
-    <button onclick="saveNewSite()">Save Site</button>
-    <button onclick="cancelNewSite()">Cancel</button>
-  </div>
+      <div class="card">
+        <div class="section-title">Planned Shifts</div>
+        <table id="rosterTable">
+          <thead><tr><th>Date</th><th>Person</th><th>Site</th><th class="num">Hours</th><th class="num">Rate</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
-  <!-- Reports -->
-  <div class="card">
-    <h2>Income Report</h2>
-    <div id="report"></div>
-  </div>
+  <!-- INCOME -->
+  <section id="income" class="tab hide">
+    <div class="grid">
+      <div class="card">
+        <div class="section-title">Add Income</div>
+        <div class="row">
+          <div><label>Date</label><input type="date" id="incDate"></div>
+          <div><label>Person</label>
+            <select id="incPerson"><option>Milinda</option><option>Sewmini</option></select>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>Site</label><select id="incSite"></select></div>
+          <div><label>Hours</label><input id="incHours" type="number" step="0.01" min="0"></div>
+          <div><label>Rate (AUD)</label><input id="incRate" type="number" step="0.01" min="0"></div>
+        </div>
+        <div><label>Notes</label><textarea id="incNotes"></textarea></div>
+        <div class="row" style="margin-top:8px"><button class="btn primary" id="addIncomeBtn">Add Income</button></div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Income This Month</div>
+        <table id="incomeTable">
+          <thead><tr><th>Date</th><th>Person</th><th>Site</th><th class="num">Hours</th><th class="num">Rate</th><th class="num">Pay</th><th>Notes</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SITES -->
+  <section id="sites" class="tab hide">
+    <div class="grid">
+      <div class="card">
+        <div class="section-title">Add / Edit Site</div>
+        <div class="row">
+          <div><label>Site Name</label><input id="siteName" placeholder="e.g., Realm Apartment"></div>
+          <div><label>Default Rate</label><input id="siteRate" type="number" step="0.01" placeholder="e.g., 23.50"></div>
+        </div>
+        <div class="row">
+          <div><label>Mon</label><input id="hMon" type="number" step="0.01"></div>
+          <div><label>Tue</label><input id="hTue" type="number" step="0.01"></div>
+          <div><label>Wed</label><input id="hWed" type="number" step="0.01"></div>
+          <div><label>Thu</label><input id="hThu" type="number" step="0.01"></div>
+        </div>
+        <div class="row">
+          <div><label>Fri</label><input id="hFri" type="number" step="0.01"></div>
+          <div><label>Sat</label><input id="hSat" type="number" step="0.01"></div>
+          <div><label>Sun</label><input id="hSun" type="number" step="0.01"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn primary" id="saveSiteBtn">Save Site</button>
+          <button class="btn ghost" id="resetSiteForm">Reset</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Your Sites</div>
+        <table id="sitesTable">
+          <thead><tr><th>Site</th><th class="num">Mon–Sun hours</th><th class="num">Rate</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- REPORTS -->
+  <section id="reports" class="tab hide">
+    <div class="grid">
+      <div class="card">
+        <div class="section-title">Earnings by Site (This Month)</div>
+        <table id="bySiteTable">
+          <thead><tr><th>Site</th><th class="num">Milinda</th><th class="num">Sewmini</th><th class="num">Total</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="section-title">Monthly Income by Person</div>
+        <table id="byPersonTable">
+          <thead><tr><th>Person</th><th class="num">Income</th><th class="num">Hours</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- BACKUP -->
+  <section id="backup" class="tab hide">
+    <div class="grid">
+      <div class="card">
+        <div class="section-title">Backup & Restore</div>
+        <div class="row">
+          <button class="btn primary" id="exportBtn">Export JSON</button>
+          <input type="file" id="importJson" accept=".json">
+          <button class="btn danger right" id="wipeBtn">Wipe All Data</button>
+        </div>
+        <div class="small" style="color:var(--muted)">Stored in <b>IndexedDB</b> (persistent). Export occasionally as a backup.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="tab hide">
+    <div class="grid">
+      <div class="card">
+        <div class="section-title">Settings</div>
+        <div class="row">
+          <div><label>Currency Symbol</label><input id="currencySymbol" value="$"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
 
 <script>
-let sites = JSON.parse(localStorage.getItem('sites')) || [
-  "Netball Stadium SA (Priceline)",
-  "Realm Apartment",
-  "Randle and Tyler",
-  "Heidelberg Cakes",
-  "Team Global Express (Covering Sift)",
-  "Modbury Jets Amateur Football Club"
-];
-let records = JSON.parse(localStorage.getItem('records')) || [];
+/* ========= IndexedDB ========= */
+const DB_NAME = 'ws_db_v3'; // bump version for roster
+const DB_VER  = 3;
+let db;
 
-// Populate site dropdown
-function refreshSites() {
-  let siteSelect = document.getElementById('site');
-  siteSelect.innerHTML = '';
-  sites.forEach(site => {
-    let opt = document.createElement('option');
-    opt.value = site;
-    opt.textContent = site;
-    siteSelect.appendChild(opt);
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const r = indexedDB.open(DB_NAME, DB_VER);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('settings')) d.createObjectStore('settings',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('sites'))    d.createObjectStore('sites',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('income'))   d.createObjectStore('income',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('roster'))   d.createObjectStore('roster',{keyPath:'id'}); // NEW
+    };
+    r.onsuccess = ()=>{ db=r.result; resolve(); };
+    r.onerror   = ()=>reject(r.error);
   });
 }
-refreshSites();
+function store(name,mode='readonly'){ return db.transaction(name,mode).objectStore(name); }
+function getAll(name){ return new Promise((res,rej)=>{ const r=store(name).getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>rej(r.error); }); }
+function put(name,val){ return new Promise((res,rej)=>{ const r=store(name,'readwrite').put(val); r.onsuccess=()=>res(true); r.onerror=()=>rej(r.error); }); }
+function del(name,key){ return new Promise((res,rej)=>{ const r=store(name,'readwrite').delete(key); r.onsuccess=()=>res(true); r.onerror=()=>rej(r.error); }); }
+function clear(name){ return new Promise((res,rej)=>{ const r=store(name,'readwrite').clear(); r.onsuccess=()=>res(true); r.onerror=()=>rej(r.error); }); }
 
-function showAddSite() {
-  document.getElementById('newSiteCard').style.display = 'block';
+/* ========= State ========= */
+let SETTINGS = { id:'settings', currencySymbol:'$', people:['Milinda','Sewmini'] };
+let SITES = [];   // {id,name,rate,h:[Mon..Sun]}
+let INCOME = [];  // {id,date,person,siteId,hours,rate,notes}
+let ROSTER = [];  // {id,date,person,siteId,hours,rate,notes,status:'Planned'|'Done'|'Cancelled'}
+
+const $ = s=>document.querySelector(s);
+const $$ = s=>Array.from(document.querySelectorAll(s));
+const fmt = (n,sym)=> (sym||'$') + (Number(n||0).toFixed(2));
+const todayISO = ()=> new Date().toISOString().slice(0,10);
+const monthKey = (d)=> (d||todayISO()).slice(0,7);
+
+/* ========= Init ========= */
+async function init(){
+  await openDB();
+
+  // settings
+  const sReq = store('settings').get('settings');
+  await new Promise(r=>{ sReq.onsuccess=()=>{ if(sReq.result) SETTINGS=sReq.result; r(); }; sReq.onerror=()=>r(); });
+  if(!sReq.result) await put('settings', SETTINGS);
+
+  // seed sites if empty
+  SITES = await getAll('sites');
+  if(SITES.length===0){
+    const names = [
+      "Netball Stadium SA (Priceline)",
+      "Realm Apartment",
+      "Randle and Tyler",
+      "Heidelberg cakes",
+      "Team Global Express (Covering Sift)",
+      "Modbury Jets Amateur Football Club"
+    ];
+    for(const n of names){ await put('sites', {id:uid(), name:n, rate:null, h:[0,0,0,0,0,0,0]}); }
+    SITES = await getAll('sites');
+  }
+
+  INCOME = await getAll('income');
+  ROSTER = await getAll('roster');
+
+  // UI base
+  $("#monthPicker").value = monthKey(todayISO());
+  $("#currencySymbol").value = SETTINGS.currencySymbol;
+  $("#incDate").value = todayISO();
+  $("#rsDate").value = todayISO();
+
+  // events
+  $("#tabs").addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    $$('#tabs button').forEach(b=>b.classList.remove('active')); e.target.classList.add('active');
+    $$('.tab').forEach(t=>t.classList.add('hide')); $('#'+e.target.dataset.tab).classList.remove('hide');
+  });
+
+  $("#currencySymbol").addEventListener('input', async ()=>{
+    SETTINGS.currencySymbol = $("#currencySymbol").value || '$';
+    await put('settings', SETTINGS); refreshAll();
+  });
+
+  // Build dropdowns
+  buildSiteOptions($('#incSite')); buildSiteOptions($('#rsSite'));
+
+  // Income inputs
+  $('#incSite').addEventListener('change', ()=>prefillFromSite($('#incSite'), $('#incDate'), $('#incHours'), $('#incRate')));
+  $('#incDate').addEventListener('change', ()=>prefillFromSite($('#incSite'), $('#incDate'), $('#incHours'), $('#incRate')));
+  $('#addIncomeBtn').addEventListener('click', addIncome);
+
+  // Roster inputs
+  $('#rsSite').addEventListener('change', ()=>prefillFromSite($('#rsSite'), $('#rsDate'), $('#rsHours'), $('#rsRate')));
+  $('#rsDate').addEventListener('change', ()=>prefillFromSite($('#rsSite'), $('#rsDate'), $('#rsHours'), $('#rsRate')));
+  $('#addShiftBtn').addEventListener('click', addShift);
+
+  // Sites
+  $('#saveSiteBtn').addEventListener('click', saveSiteFromForm);
+  $('#resetSiteForm').addEventListener('click', resetSiteForm);
+
+  // Backup
+  $("#exportBtn").addEventListener('click', exportJSON);
+  $("#importJson").addEventListener('change', importJSON);
+  $("#wipeBtn").addEventListener('click', wipeAll);
+
+  $("#monthPicker").addEventListener('change', ()=>{ renderIncomeTable(); renderDashboard(); renderReports(); });
+
+  refreshAll();
 }
-function cancelNewSite() {
-  document.getElementById('newSiteCard').style.display = 'none';
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+/* ========= Dropdowns & Prefill ========= */
+function buildSiteOptions(selectEl){
+  selectEl.innerHTML='';
+  SITES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
+    const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; selectEl.appendChild(o);
+  });
 }
-function saveNewSite() {
-  let siteName = document.getElementById('newSiteName').value.trim();
-  if (siteName) {
-    sites.push(siteName);
-    localStorage.setItem('sites', JSON.stringify(sites));
-    refreshSites();
-    cancelNewSite();
+
+function prefillFromSite(selEl, dateEl, hoursEl, rateEl){
+  const site = SITES.find(s=>s.id===selEl.value); if(!site) return;
+  const d = new Date(dateEl.value||todayISO()); const dow = d.getDay(); // 0 Sun..6 Sat
+  const idx = (dow===0?6:dow-1); // our array Mon..Sun
+  hoursEl.value = Number(site.h[idx]||0);
+  if(site.rate!=null && site.rate!=='') rateEl.value = site.rate;
+}
+
+/* ========= Income ========= */
+async function addIncome(){
+  const item = {
+    id: uid(),
+    date: $("#incDate").value || todayISO(),
+    person: $("#incPerson").value,
+    siteId: $("#incSite").value,
+    hours: parseFloat($("#incHours").value||0),
+    rate:  parseFloat($("#incRate").value||0),
+    notes: ($("#incNotes").value||'').trim()
+  };
+  if(!item.siteId || !item.hours || !item.rate){ alert('Please fill site, hours and rate'); return; }
+  await put('income', item);
+  INCOME = await getAll('income');
+  $("#incHours").value=''; $("#incRate").value=''; $("#incNotes").value='';
+  renderIncomeTable(); renderDashboard(); renderReports();
+}
+
+function siteById(id){ return SITES.find(s=>s.id===id)||{name:'(deleted)'}; }
+
+function renderIncomeTable(){
+  const m = $("#monthPicker").value;
+  const tbody = $("#incomeTable tbody"); tbody.innerHTML='';
+  INCOME.filter(i=>i.date.startsWith(m)).sort((a,b)=>a.date<b.date?1:-1).forEach(i=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i.date}</td><td>${i.person}</td><td>${escapeHtml(siteById(i.siteId).name)}</td>
+      <td class="num">${i.hours.toFixed(2)}</td><td class="num">${fmt(i.rate, SETTINGS.currencySymbol)}</td>
+      <td class="num">${fmt(i.hours*i.rate, SETTINGS.currencySymbol)}</td>
+      <td>${escapeHtml(i.notes||'')}</td>
+      <td><button class="btn danger small" data-id="${i.id}" data-act="del">Delete</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.onclick = async e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.act==='del'){ await del('income', b.dataset.id); INCOME=await getAll('income'); renderIncomeTable(); renderDashboard(); renderReports(); }
+  };
+}
+
+/* ========= Roster (Upcoming Shifts) ========= */
+async function addShift(){
+  const item = {
+    id: uid(),
+    date: $("#rsDate").value || todayISO(),
+    person: $("#rsPerson").value,
+    siteId: $("#rsSite").value,
+    hours: parseFloat($("#rsHours").value||0),
+    rate:  parseFloat($("#rsRate").value||0),
+    notes: ($("#rsNotes").value||'').trim(),
+    status: 'Planned'
+  };
+  if(!item.siteId || !item.hours || !item.rate){ alert('Please fill site, hours and rate'); return; }
+  await put('roster', item);
+  ROSTER = await getAll('roster');
+  $("#rsHours").value=''; $("#rsRate").value=''; $("#rsNotes").value='';
+  renderRoster(); renderDashboard();
+}
+
+function renderRoster(){
+  const tbody = $("#rosterTable tbody"); tbody.innerHTML='';
+  const today = todayISO();
+  ROSTER.slice().sort((a,b)=>a.date>b.date?1:-1).forEach(r=>{
+    // show all planned and recent done/cancelled
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.date}</td><td>${r.person}</td><td>${escapeHtml(siteById(r.siteId).name)}</td>
+      <td class="num">${(r.hours||0).toFixed(2)}</td><td class="num">${fmt(r.rate||0, SETTINGS.currencySymbol)}</td>
+      <td>${r.status}</td>
+      <td>
+        ${r.status==='Planned' ? `<button class="btn primary small" data-id="${r.id}" data-act="conv">Convert → Income</button> ` : ''}
+        <button class="btn ghost small" data-id="${r.id}" data-act="del">Delete</button>
+        ${r.status==='Planned' ? `<button class="btn warn small" data-id="${r.id}" data-act="cancel">Cancel</button>`:''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.onclick = async e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const id=b.dataset.id; const act=b.dataset.act;
+    if(act==='del'){ await del('roster', id); ROSTER=await getAll('roster'); renderRoster(); renderDashboard(); }
+    if(act==='cancel'){ const r=ROSTER.find(x=>x.id===id); r.status='Cancelled'; await put('roster', r); ROSTER=await getAll('roster'); renderRoster(); renderDashboard(); }
+    if(act==='conv'){ await convertToIncome(id); }
+  };
+
+  // Dashboard “soon” table (next 14 days)
+  const soonBody = $("#soonTable tbody"); soonBody.innerHTML='';
+  const now = new Date(today);
+  const in14 = new Date(now); in14.setDate(now.getDate()+14);
+  ROSTER.filter(r=>r.status==='Planned' && new Date(r.date)>=now && new Date(r.date)<=in14)
+        .sort((a,b)=>a.date>b.date?1:-1)
+        .forEach(r=>{
+          const tr=document.createElement('tr');
+          tr.innerHTML = `<td>${r.date}</td><td>${r.person}</td><td>${escapeHtml(siteById(r.siteId).name)}</td>
+                          <td class="num">${(r.hours||0).toFixed(2)}</td><td class="num">${fmt(r.rate||0, SETTINGS.currencySymbol)}</td>
+                          <td>${r.status}</td>`;
+          soonBody.appendChild(tr);
+        });
+}
+
+async function convertToIncome(rosterId){
+  const r = ROSTER.find(x=>x.id===rosterId); if(!r) return;
+  const income = { id:uid(), date:r.date, person:r.person, siteId:r.siteId, hours:r.hours, rate:r.rate, notes:r.notes };
+  await put('income', income);
+  r.status='Done'; await put('roster', r);
+  INCOME = await getAll('income'); ROSTER = await getAll('roster');
+  renderIncomeTable(); renderRoster(); renderDashboard(); renderReports();
+}
+
+/* ========= Sites ========= */
+function resetSiteForm(){ $("#siteName").value=''; $("#siteRate").value=''; ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>$("#h"+d).value=''); }
+async function saveSiteFromForm(){
+  const name = ($("#siteName").value||'').trim(); if(!name){ alert('Enter site name'); return; }
+  const h = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>parseFloat($("#h"+d).value||0));
+  const rate = parseFloat($("#siteRate").value||''); const site={id:uid(), name, rate:isNaN(rate)?null:rate, h};
+  await put('sites', site); SITES = await getAll('sites');
+  buildSiteOptions($('#incSite')); buildSiteOptions($('#rsSite')); renderSitesTable(); resetSiteForm();
+}
+
+function renderSitesTable(){
+  const tbody=$("#sitesTable tbody"); tbody.innerHTML='';
+  SITES.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${escapeHtml(s.name)}</td>
+      <td class="num">${s.h.map(x=>Number(x||0).toFixed(2)).join(' / ')}</td>
+      <td class="num">${s.rate!=null?fmt(s.rate,SETTINGS.currencySymbol):'—'}</td>
+      <td><button class="btn danger small" data-id="${s.id}">Delete</button></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.onclick = async e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    await del('sites', b.dataset.id); SITES = await getAll('sites');
+    buildSiteOptions($('#incSite')); buildSiteOptions($('#rsSite')); renderSitesTable();
+  };
+}
+
+/* ========= Reports & Dashboard ========= */
+function renderDashboard(){
+  const m=$("#monthPicker").value;
+  const rows=INCOME.filter(i=>i.date.startsWith(m));
+  const sum=rows.reduce((s,i)=>s+i.hours*i.rate,0);
+  const sumM=rows.filter(i=>i.person==='Milinda').reduce((s,i)=>s+i.hours*i.rate,0);
+  const sumS=rows.filter(i=>i.person==='Sewmini').reduce((s,i)=>s+i.hours*i.rate,0);
+  $("#kpiIncome").textContent=fmt(sum,SETTINGS.currencySymbol);
+  $("#kpiMilinda").textContent=fmt(sumM,SETTINGS.currencySymbol);
+  $("#kpiSewmini").textContent=fmt(sumS,SETTINGS.currencySymbol);
+  const hrs=rows.reduce((s,i)=>s+i.hours,0);
+  $("#incomeHoursHint").textContent=`${hrs.toFixed(2)} hours across ${rows.length} shifts`;
+
+  // soonTable filled in renderRoster()
+}
+
+function renderReports(){
+  const m=$("#monthPicker").value;
+  const rows=INCOME.filter(i=>i.date.startsWith(m));
+  // by site
+  const map={};
+  for(const i of rows){
+    const name=siteById(i.siteId).name;
+    map[name]=map[name]||{Milinda:0,Sewmini:0};
+    map[name][i.person]+=i.hours*i.rate;
+  }
+  const tbody=$("#bySiteTable tbody"); tbody.innerHTML='';
+  Object.entries(map).sort((a,b)=>(b[1].Milinda+b[1].Sewmini)-(a[1].Milinda+a[1].Sewmini)).forEach(([site,vals])=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${escapeHtml(site)}</td>
+      <td class="num">${fmt(vals.Milinda,SETTINGS.currencySymbol)}</td>
+      <td class="num">${fmt(vals.Sewmini,SETTINGS.currencySymbol)}</td>
+      <td class="num">${fmt(vals.Milinda+vals.Sewmini,SETTINGS.currencySymbol)}</td>`;
+    tbody.appendChild(tr);
+  });
+  // by person
+  const tbody2=$("#byPersonTable tbody"); tbody2.innerHTML='';
+  for(const p of ['Milinda','Sewmini']){
+    const r=rows.filter(i=>i.person===p);
+    const income=r.reduce((s,i)=>s+i.hours*i.rate,0);
+    const hours=r.reduce((s,i)=>s+i.hours,0);
+    const tr=document.createElement('tr'); tr.innerHTML=`<td>${p}</td><td class="num">${fmt(income,SETTINGS.currencySymbol)}</td><td class="num">${hours.toFixed(2)}</td>`;
+    tbody2.appendChild(tr);
   }
 }
 
-function addIncome() {
-  let person = document.getElementById('person').value;
-  let site = document.getElementById('site').value;
-  let date = document.getElementById('date').value;
-  let hours = parseFloat(document.getElementById('hours').value);
-  let rate = parseFloat(document.getElementById('rate').value);
-
-  if (!date || isNaN(hours) || isNaN(rate)) {
-    alert("Fill all fields correctly!");
-    return;
-  }
-
-  let income = hours * rate;
-  records.push({ person, site, date, hours, rate, income });
-  localStorage.setItem('records', JSON.stringify(records));
-  showReport();
+/* ========= Backup ========= */
+async function exportJSON(){
+  const data={ settings:SETTINGS, sites:await getAll('sites'), income:await getAll('income'), roster:await getAll('roster') };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`work_spend_backup_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
 }
-
-function showReport() {
-  let html = "<table><tr><th>Person</th><th>Site</th><th>Date</th><th>Hours</th><th>Rate</th><th>Income</th></tr>";
-  records.forEach(r => {
-    html += `<tr><td>${r.person}</td><td>${r.site}</td><td>${r.date}</td><td>${r.hours}</td><td>${r.rate}</td><td>$${r.income.toFixed(2)}</td></tr>`;
-  });
-  html += "</table>";
-
-  // Totals per person
-  let totals = {};
-  records.forEach(r => {
-    if (!totals[r.person]) totals[r.person] = 0;
-    totals[r.person] += r.income;
-  });
-
-  html += "<h3>Totals</h3><ul>";
-  for (let p in totals) {
-    html += `<li>${p}: $${totals[p].toFixed(2)}</li>`;
-  }
-  html += "</ul>";
-
-  document.getElementById('report').innerHTML = html;
+async function importJSON(e){
+  const f=e.target.files[0]; if(!f) return; const text=await f.text();
+  try{
+    const data=JSON.parse(text); if(!data.settings) throw new Error('Invalid backup');
+    await clear('income'); await clear('sites'); await clear('settings'); await clear('roster');
+    await put('settings',data.settings); for(const s of (data.sites||[])) await put('sites',s);
+    for(const i of (data.income||[])) await put('income',i); for(const r of (data.roster||[])) await put('roster',r);
+    SETTINGS=data.settings; SITES=await getAll('sites'); INCOME=await getAll('income'); ROSTER=await getAll('roster');
+    $("#currencySymbol").value=SETTINGS.currencySymbol; buildSiteOptions($('#incSite')); buildSiteOptions($('#rsSite')); refreshAll(); alert('Imported');
+  }catch(err){ alert('Import failed: '+err.message); }
 }
-showReport();
+async function wipeAll(){ if(!confirm('Wipe ALL data?')) return; await clear('income'); await clear('sites'); await clear('settings'); await clear('roster'); location.reload(); }
+
+/* ========= Helpers ========= */
+function escapeHtml(str){ return (str||'').replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
+function refreshAll(){ renderIncomeTable(); renderRoster(); renderSitesTable(); renderDashboard(); renderReports(); }
+
+init();
 </script>
 </body>
 </html>
