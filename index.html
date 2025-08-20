@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Work & Spend - Milinda & Sewmini</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+    h1 { text-align: center; }
+    .card { background: white; padding: 20px; margin: 10px auto; max-width: 700px; border-radius: 8px; box-shadow: 0 0 5px #aaa; }
+    label { display: block; margin: 8px 0 4px; }
+    input, select { width: 100%; padding: 6px; margin-bottom: 10px; }
+    button { padding: 8px 15px; margin: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background: #eee; }
+  </style>
+</head>
+<body>
+  <h1>Work & Spend Tracker (Milinda & Sewmini)</h1>
+
+  <!-- Add Income Section -->
+  <div class="card">
+    <h2>Add Income</h2>
+    <label for="person">Person</label>
+    <select id="person">
+      <option value="Milinda">Milinda</option>
+      <option value="Sewmini">Sewmini</option>
+    </select>
+
+    <label for="site">Site</label>
+    <select id="site"></select>
+    <button onclick="showAddSite()">+ Add New Site</button>
+
+    <label for="date">Date</label>
+    <input type="date" id="date">
+
+    <label for="hours">Hours Worked</label>
+    <input type="number" id="hours" placeholder="Enter hours">
+
+    <label for="rate">Hourly Rate ($)</label>
+    <input type="number" id="rate" placeholder="Enter rate">
+
+    <button onclick="addIncome()">Add Income</button>
+  </div>
+
+  <!-- Add New Site Section -->
+  <div class="card" id="newSiteCard" style="display:none;">
+    <h2>Add New Site</h2>
+    <label for="newSiteName">Site Name</label>
+    <input type="text" id="newSiteName" placeholder="e.g. Netball Stadium SA">
+
+    <label>Weekly Hours (Mon–Sun)</label>
+    <input type="text" id="weeklyHours" placeholder="e.g. Mon=5,Tue=4,...">
+
+    <button onclick="saveNewSite()">Save Site</button>
+    <button onclick="cancelNewSite()">Cancel</button>
+  </div>
+
+  <!-- Reports -->
+  <div class="card">
+    <h2>Income Report</h2>
+    <div id="report"></div>
+  </div>
+
+<script>
+let sites = JSON.parse(localStorage.getItem('sites')) || [
+  "Netball Stadium SA (Priceline)",
+  "Realm Apartment",
+  "Randle and Tyler",
+  "Heidelberg Cakes",
+  "Team Global Express (Covering Sift)",
+  "Modbury Jets Amateur Football Club"
+];
+let records = JSON.parse(localStorage.getItem('records')) || [];
+
+// Populate site dropdown
+function refreshSites() {
+  let siteSelect = document.getElementById('site');
+  siteSelect.innerHTML = '';
+  sites.forEach(site => {
+    let opt = document.createElement('option');
+    opt.value = site;
+    opt.textContent = site;
+    siteSelect.appendChild(opt);
+  });
+}
+refreshSites();
+
+function showAddSite() {
+  document.getElementById('newSiteCard').style.display = 'block';
+}
+function cancelNewSite() {
+  document.getElementById('newSiteCard').style.display = 'none';
+}
+function saveNewSite() {
+  let siteName = document.getElementById('newSiteName').value.trim();
+  if (siteName) {
+    sites.push(siteName);
+    localStorage.setItem('sites', JSON.stringify(sites));
+    refreshSites();
+    cancelNewSite();
+  }
+}
+
+function addIncome() {
+  let person = document.getElementById('person').value;
+  let site = document.getElementById('site').value;
+  let date = document.getElementById('date').value;
+  let hours = parseFloat(document.getElementById('hours').value);
+  let rate = parseFloat(document.getElementById('rate').value);
+
+  if (!date || isNaN(hours) || isNaN(rate)) {
+    alert("Fill all fields correctly!");
+    return;
+  }
+
+  let income = hours * rate;
+  records.push({ person, site, date, hours, rate, income });
+  localStorage.setItem('records', JSON.stringify(records));
+  showReport();
+}
+
+function showReport() {
+  let html = "<table><tr><th>Person</th><th>Site</th><th>Date</th><th>Hours</th><th>Rate</th><th>Income</th></tr>";
+  records.forEach(r => {
+    html += `<tr><td>${r.person}</td><td>${r.site}</td><td>${r.date}</td><td>${r.hours}</td><td>${r.rate}</td><td>$${r.income.toFixed(2)}</td></tr>`;
+  });
+  html += "</table>";
+
+  // Totals per person
+  let totals = {};
+  records.forEach(r => {
+    if (!totals[r.person]) totals[r.person] = 0;
+    totals[r.person] += r.income;
+  });
+
+  html += "<h3>Totals</h3><ul>";
+  for (let p in totals) {
+    html += `<li>${p}: $${totals[p].toFixed(2)}</li>`;
+  }
+  html += "</ul>";
+
+  document.getElementById('report').innerHTML = html;
+}
+showReport();
+</script>
+</body>
+</html>
